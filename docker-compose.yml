@@ -1,0 +1,120 @@
+services:
+  traefik:
+    image: traefik:v2.9
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8080:8080"  # Puerto para el dashboard de Traefik
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - web
+    command:
+      - "--api.dashboard=true"
+      - "--api.insecure=true"
+      - "--log.level=DEBUG"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+      # Agregar timeout más largo
+      - "--serversTransport.forwardingTimeouts.dialTimeout=30s"
+      - "--serversTransport.forwardingTimeouts.responseHeaderTimeout=30s"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.dashboard.rule=Host(`traefik.localhost`)"
+      - "traefik.http.routers.dashboard.service=api@internal"
+      - "traefik.http.routers.dashboard.entrypoints=web"
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "--quiet", "http://localhost:8080/api/overview"]
+      interval: 15s  # Cambiado de 10s a 15s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+
+  api:
+    build:
+      context: ./api
+    environment:
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_USER=guest
+      - RABBITMQ_PASS=guest
+    networks:
+      - web
+      - internal
+    depends_on:
+      - rabbitmq
+    ports:
+      - "8000:8000"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.api.rule=PathPrefix(`/api`)"
+      - "traefik.http.routers.api.entrypoints=web"
+      # Cambiar cómo se referencia al servicio, usar nombre explícito
+      - "traefik.http.services.api-svc.loadbalancer.server.port=8000"
+      - "traefik.http.routers.api.service=api-svc"
+      - "traefik.http.middlewares.api-strip.stripprefix.prefixes=/api"
+      - "traefik.http.routers.api.middlewares=api-strip"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 15s  # Cambiado de 30s a 15s
+      timeout: 5s    # Reducido de 10s a 5s
+      retries: 3
+
+  worker:
+    build:
+      context: ./worker
+    environment:
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_USER=guest
+      - RABBITMQ_PASS=guest
+    volumes:
+      - message_data:/app/data
+    networks:
+      - internal
+    depends_on:
+      - rabbitmq
+    healthcheck:
+      test: ["CMD", "python", "-c", "import os; exit(0 if os.path.exists('/app/health') else 1)"]
+      interval: 15s  # Cambiado de 30s a 15s
+      timeout: 5s    # Reducido de 10s a 5s
+      retries: 3
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    environment:
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=guest
+      # Permitir acceso desde cualquier origen
+      - RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS=-rabbitmq_management load_definitions "/etc/rabbitmq/definitions.json" -rabbit loopback_users "[]"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+      # Agregar archivo de definiciones
+      - ./rabbitmq/definitions.json:/etc/rabbitmq/definitions.json
+    networks:
+      - internal
+      - web
+    ports:
+      - "15672:15672"  # Acceso a la interfaz web
+      # Eliminar o cambiar el puerto 5672 según la opción que hayas elegido
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.rabbit.rule=PathPrefix(`/monitor`)"
+      - "traefik.http.routers.rabbit.entrypoints=web"
+      - "traefik.http.services.rabbit.loadbalancer.server.port=15672"
+      - "traefik.http.middlewares.rabbit-strip.stripprefix.prefixes=/monitor"
+      - "traefik.http.routers.rabbit.middlewares=rabbit-strip"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "check_port_connectivity"]
+      interval: 15s  # Cambiado de 30s a 15s
+      timeout: 5s    # Reducido de 10s a 5s
+      retries: 3
+
+networks:
+  web:
+    driver: bridge
+  internal:
+    driver: bridge
+
+volumes:
+  rabbitmq_data:
+  message_data:
