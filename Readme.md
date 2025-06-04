@@ -2,17 +2,11 @@
 
 ## SECCIÓN 1: CONCEPTOS TEÓRICOS
 
-### 1.1 RabbitMQ
-
-#### ¿Qué es RabbitMQ y cuándo se debe utilizar una cola frente a un exchange tipo fanout?
-RabbitMQ es un broker de mensajería de código abierto que implementa el protocolo AMQP (Advanced Message Queuing Protocol).
-Tiene productores, los cuales generan la informacion y la mandan a una exchange luego el exchange escoge a donde enviar el mensaje para luego ser consumido por un consumer
-
+RabbitMQ
+● Explique qué es RabbitMQ y cuándo se debe utilizar una cola frente a un exchange tipo fanout
 un fanout es cuando no nos importa a quien le llegue
 un exchange tiene filtros para decidir a quien le va llegar el mensaje
-
-#### ¿Qué es una Dead Letter Queue (DLQ) y cómo se configura en RabbitMQ?
-
+● ¿Qué es una Dead Letter Queue (DLQ) y cómo se configura en RabbitMQ?
 Es un sistema para hacer que mensajes que nunca fueron enviados sean procesados
 
 Docker y Docker Compose
