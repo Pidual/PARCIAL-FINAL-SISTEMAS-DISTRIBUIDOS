@@ -5,21 +5,24 @@
 ### 1.1 RabbitMQ
 
 #### ¿Qué es RabbitMQ y cuándo se debe utilizar una cola frente a un exchange tipo fanout?
+RabbitMQ es un broker de mensajería de código abierto que implementa el protocolo AMQP (Advanced Message Queuing Protocol).
+Tiene productores, los cuales generan la informacion y la mandan a una exchange luego el exchange escoge a donde enviar el mensaje para luego ser consumido por un consumer
 
-RabbitMQ es un broker de mensajería de código abierto que implementa el protocolo AMQP (Advanced Message Queuing Protocol). Actúa como intermediario para la comunicación asíncrona entre diferentes servicios, permitiendo el desacoplamiento entre productores y consumidores de mensajes.
-
-**Diferencia entre cola y exchange tipo fanout:**
-- **Cola (Queue)**: Se debe utilizar cuando necesitamos un patrón de comunicación punto a punto, donde cada mensaje debe ser procesado por un único consumidor. Las colas garantizan que un mensaje será entregado a un solo consumidor, lo que es ideal para distribuir tareas entre workers y asegurar que cada tarea se procese una sola vez.
-
-- **Exchange tipo fanout**: Se debe utilizar cuando necesitamos un patrón de comunicación de publicación/suscripción, donde cada mensaje debe ser enviado a múltiples consumidores. Un exchange fanout distribuye todos los mensajes que recibe a todas las colas que están enlazadas a él. Es ideal para notificaciones en tiempo real, actualizaciones de estado o cualquier escenario donde múltiples servicios necesiten recibir la misma información.
+un fanout es cuando no nos importa a quien le llegue
+un exchange tiene filtros para decidir a quien le va llegar el mensaje
 
 #### ¿Qué es una Dead Letter Queue (DLQ) y cómo se configura en RabbitMQ?
 
-Una **Dead Letter Queue (DLQ)** es una cola especial donde se envían los mensajes que no pudieron ser procesados correctamente por los consumidores o que expiraron antes de ser consumidos. Esto permite capturar mensajes fallidos para su posterior análisis, reintento o notificación.
+Es un sistema para hacer que mensajes que nunca fueron enviados sean procesados
 
+Docker y Docker Compose
+● Diferencia entre un volumen y un bind mount con ejemplos: un volumen es dentro de docker y un bind mount utiliza una carpeta por fuera de docker
+● ¿Qué implica usar network_mode: host en un contenedor?. Que utiliza su propia red jjj
 
-
-
+Traefik
+● Función de Traefik en una arquitectura de microservicios. muy util para mandarle al microservicio que le corresponda, ademas hace load balancer y mucha mas magia pero prefiero no usarlo
+● ¿Cómo se puede asegurar un endpoint usando certificados TLS automáticos
+en Traefik?, usando un self singed certificate ni idea pero de alguna forma nos da HTTPS 
 
 
 SECCION 2
@@ -44,12 +47,15 @@ FUe el mismo proceso anterior le pedi a claude que me ayudara con a implementaci
 4 Configurar Traefik para enrutar las siguientes rutas:
  /api hacia el servicio api.
  /monitor hacia la interfaz web de RabbitMQ.
-Esta configuración debe se realizo con label dentro de docker-compose.yml.
+Esta configuración debe se la realizo claude jaja puso labels  dentro de docker-compose.yml.
 Labels para el servicio de traefik 
-![image](https://github.com/user-attachments/assets/efce6814-af4b-48ad-8897-5021674bde1f)
 
 
 
+
+5. Healt Checks
+   ![image](https://github.com/user-attachments/assets/558f0fd8-490d-4ae3-b9f1-d2df7ada2c16)
+por medio de helat checks podemos revisar en este caso esta configurado para 30 segundos 
 
 
 
